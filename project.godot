@@ -13,6 +13,14 @@ config_version=4
 config/name="Algorithm"
 config/icon="res://icon.png"
 
+[autoload]
+
+Algorithm="*res://addons/algorithm/algorithm.gd"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/algorithm/plugin.cfg" )
+
 [physics]
 
 common/enable_pause_aware_picking=true
