@@ -46,6 +46,24 @@ const Iterator := preload("detail/iterator.gd")
 #    var maximum := args[1] as float
 #    return clamp(float(string), minimum, maximum)
 
+# binary_operation
+# A function that takes to values and returns a value.
+# Additionally, it takes an Array argument that can be
+# used to supply it with data required for the function.
+#
+# Example:
+# func accumulate_attack_power(current: int, equipment: Equipment) -> int:
+#     return current + equipment.attack_power
+
+# comparator
+# A function that takes two elements of a container and returns a value testable as bool.
+# Additionally, it takes an Array argument that can be
+# used to supply it with data required for the evaluation.
+#
+# Example:
+# func greater_string(left: String, right: String, _args: Array) -> bool:
+#     return left.casecmp_to(right) > -1
+
 enum OutputHint {
 	NONE = 0,
 	PUSH_FRONT = 1,
@@ -207,6 +225,7 @@ func remove_copy_if(input, output, unary_predicate: FuncRef, args: Array = [],
 func unique(container, binary_predicate: FuncRef = funcref(Default, "equals"), args: Array = []) -> void:
 	"""Eliminates all except the first of equivalent elements in contianer for which binary_predicate returns true.
 	Each element is compared to all elements previously identified as unique.
+	By default uses left == right to compare elements.
 	Note: This function behaves differently in the C++ standard library.
 	See: https://en.cppreference.com/w/cpp/algorithm/unique"""
 	var iter: Iterator.InputRemoveIntf = Iterator.input_remove(container)
@@ -226,7 +245,8 @@ func unique(container, binary_predicate: FuncRef = funcref(Default, "equals"), a
 
 func unique_copy(input, output, binary_predicate: FuncRef = funcref(Default, "equals"), args: Array = [],
 		hint: int = OutputHint.NONE) -> void:
-	"""Copies elements from input to output in such a way that there are no equal elements in output as compared by binary_predicate."""
+	"""Copies elements from input to output in such a way that there are no equal elements in output as compared by binary_predicate.
+	By default uses left == right to compare elements."""
 	var input_iter: Iterator.InputIntf = Iterator.input(input)
 	var output_iter: Iterator.OutputIntf = Iterator.output(output, hint)
 	var unique_elements := []
@@ -239,3 +259,54 @@ func unique_copy(input, output, binary_predicate: FuncRef = funcref(Default, "eq
 		if is_unique:
 			output_iter.write(element)
 			unique_elements.push_back(element)
+
+
+
+
+
+# note: Minimum/maximum operations.
+# ---------------------------------
+
+func max_element(container, comparator: FuncRef = funcref(Default, "greater_than"), args: Array = []):
+	"""Finds the greates element in container.
+	By default uses left > right to compare elements."""
+	var iter: Iterator.InputIntf = Iterator.input(container)
+	var largest = null
+	for element in iter:
+		largest = element
+		break
+	for element in iter:
+		if comparator.call_func(element, largest, args):
+			largest = element
+	return largest
+
+
+func min_element(container, comparator: FuncRef = funcref(Default, "lesser_than"), args: Array = []):
+	"""Finds the smallest element in container.
+	By default used left < right to compare elements."""
+	var iter: Iterator.InputIntf = Iterator.input(container)
+	var smallest = null
+	for element in iter:
+		smallest = element
+		break
+	for element in iter:
+		if comparator.call_func(element, smallest, args):
+			smallest = element
+	return smallest
+
+
+
+
+
+#note: Numeric operations.
+# ------------------------
+
+func accumulate(container, init, binary_operation: FuncRef = funcref(Default, "add"), args: Array = []):
+	"""Computes the sum of the given value init and the elements in container.
+	binary_operation is used to add the currently accumulated value with the current element.
+	By default uses left + right to add elements.
+	Note: binary_operation's first passed parameter is the accumulated value, second is the element."""
+	var result = init
+	for element in Iterator.input(container):
+		result = binary_operation.call_func(result, element, args)
+	return convert(result, typeof(init))
